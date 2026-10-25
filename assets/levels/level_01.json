@@ -1,0 +1,7 @@
+﻿{
+  "id": 1,
+  "title": "First Steps",
+  "grid": ["P..#.", "...#.", "..G.."],
+  "allowedCommands": ["move", "turnLeft", "turnRight"],
+  "maxSteps": 20
+}
