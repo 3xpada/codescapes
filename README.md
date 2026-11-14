@@ -1,17 +1,16 @@
-# codescapes
+# Codescapes
 
-A new Flutter project.
+Codescapes is a Flutter puzzle game for practicing Python basics. In each
+fill-in-the-blanks level, players complete a short program to match the target
+output. First-time level clears award 5 coins, which can be spent on hints.
 
 ## Getting Started
 
-This project is a starting point for a Flutter application.
+Run the app with Flutter:
 
-A few resources to get you started if this is your first Flutter project:
+```sh
+flutter pub get
+flutter run
+```
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Run the tests with `flutter test`.

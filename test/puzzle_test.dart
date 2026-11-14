@@ -4,11 +4,28 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:codescapes/engine/interpreter.dart';
 import 'package:codescapes/engine/puzzle.dart';
+import 'package:codescapes/engine/game_progress_manager.dart';
 
 void main() {
-  final puzzles = (jsonDecode(File('assets/puzzles/puzzles.json').readAsStringSync())['puzzles'] as List)
-      .map((j) => Puzzle.fromJson(j as Map<String, dynamic>))
-      .toList();
+  test('each level grants five coins only on its first clear', () {
+    final progress = GameProgress();
+    addTearDown(progress.dispose);
+
+    expect(progress.completePuzzle(1), isTrue);
+    expect(progress.coins, 55);
+    expect(progress.completePuzzle(1), isFalse);
+    expect(progress.coins, 55);
+    expect(progress.completePuzzle(2), isTrue);
+    expect(progress.coins, 60);
+  });
+
+  final puzzles =
+      (jsonDecode(
+                File('assets/puzzles/puzzles.json').readAsStringSync(),
+              )['puzzles']
+              as List)
+          .map((j) => Puzzle.fromJson(j as Map<String, dynamic>))
+          .toList();
   Puzzle byId(int id) => puzzles.firstWhere((p) => p.id == id);
 
   group('interpreter', () {
@@ -20,8 +37,16 @@ void main() {
     });
 
     test('loops and ifs', () {
-      expect(runProgram('t = 0\nfor i in range(1, 4):\n    t += i\nprint(t)').output, '6\n');
-      expect(runProgram('x = 5\nif x > 3:\n    print("big")\nelse:\n    print("small")').output, 'big\n');
+      expect(
+        runProgram('t = 0\nfor i in range(1, 4):\n    t += i\nprint(t)').output,
+        '6\n',
+      );
+      expect(
+        runProgram(
+          'x = 5\nif x > 3:\n    print("big")\nelse:\n    print("small")',
+        ).output,
+        'big\n',
+      );
     });
 
     test('undefined name reports line', () {
@@ -49,7 +74,10 @@ void main() {
 
     for (final entry in solutions.entries) {
       test('level ${entry.key} accepts the right answer', () {
-        expect(checkPuzzle(byId(entry.key), entry.value).verdict, Verdict.correct);
+        expect(
+          checkPuzzle(byId(entry.key), entry.value).verdict,
+          Verdict.correct,
+        );
       });
     }
 

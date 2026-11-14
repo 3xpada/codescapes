@@ -4,6 +4,7 @@
       "id": 1,
       "title": "Say Hello",
       "story": "The terminal flickers to life. Greet the world to power it on.",
+      "task": "Write a print statement that greets the world.",
       "template": "print(\"Hello, ___!\")",
       "hints": [
         "Look at the goal output. Which word comes after 'Hello, '?",
@@ -15,6 +16,7 @@
       "id": 2,
       "title": "Bonus Points",
       "story": "Your score needs a bonus to reach the next rank.",
+      "task": "Set a bonus, add it to the score, and print 15.",
       "template": "score = 10\nbonus = ___\ntotal = score + bonus\nprint(total)",
       "hints": [
         "The program should print 15.",
@@ -26,6 +28,7 @@
       "id": 3,
       "title": "Loop It",
       "story": "The door only opens after the code is chanted three times.",
+      "task": "Use a for loop to print Code! three times.",
       "template": "for i in range(___):\n    print(\"Code!\")",
       "hints": [
         "range(n) repeats the indented lines n times.",
@@ -37,6 +40,7 @@
       "id": 4,
       "title": "Even or Odd",
       "story": "The bridge guard only lets even numbers across.",
+      "task": "Use the modulo operator to check whether 8 is even.",
       "template": "number = 8\nif number ___ 2 == 0:\n    print(\"even\")\nelse:\n    print(\"odd\")",
       "hints": [
         "You need the operator that gives the remainder of a division.",
@@ -48,6 +52,7 @@
       "id": 5,
       "title": "Countdown",
       "story": "Launch sequence! Count down, but stop before zero.",
+      "task": "Use a while loop to count down from 3, then print Liftoff!",
       "template": "count = 3\nwhile count ___ 0:\n    print(count)\n    count = count - 1\nprint(\"Liftoff!\")",
       "hints": [
         "The loop should keep going while count is bigger than 0.",
@@ -59,6 +64,7 @@
       "id": 6,
       "title": "Add It Up",
       "story": "Add the numbers 1 to 5 to unlock the vault.",
+      "task": "Use a for loop to add 1 through 5 and print the total.",
       "template": "total = 0\nfor n in range(1, ___):\n    total = total + ___\nprint(total)",
       "hints": [
         "range(1, 6) gives 1, 2, 3, 4, 5. The end number is not included.",

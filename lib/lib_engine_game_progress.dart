@@ -2,6 +2,8 @@
 import 'package:flutter/foundation.dart';
 
 class GameProgress extends ChangeNotifier {
+  static const int puzzleReward = 5;
+
   int _coins = 50; // Starting bonus coins for the player
   final Set<int> _solvedPuzzles = {};
   final Map<int, int> _unlockedHintsCount = {}; // puzzleId -> number of hints unlocked
@@ -13,10 +15,10 @@ class GameProgress extends ChangeNotifier {
   int getUnlockedHints(int puzzleId) => _unlockedHintsCount[puzzleId] ?? 0;
 
   // Reward coins on first solve
-  bool completePuzzle(int puzzleId, {int reward = 25}) {
+  bool completePuzzle(int puzzleId) {
     if (!_solvedPuzzles.contains(puzzleId)) {
       _solvedPuzzles.add(puzzleId);
-      _coins += reward;
+      _coins += puzzleReward;
       notifyListeners();
       return true; // First-time reward granted
     }
