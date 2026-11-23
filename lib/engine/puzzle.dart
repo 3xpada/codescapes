@@ -6,6 +6,7 @@ import 'programming_language.dart';
 /// A fill-in-the-blank level. Blanks in [template] are written as ___ .
 class Puzzle {
   static const blankMarker = '___';
+  static const maxAnswerLength = 40;
 
   final int id;
   final String title;
@@ -86,6 +87,14 @@ Attempt checkPuzzle(Puzzle p, List<String> answers) {
     return Attempt(
       Verdict.incomplete,
       'Fill in every blank before running.',
+      '',
+      expected,
+    );
+  }
+  if (answers.any((answer) => answer.length > Puzzle.maxAnswerLength)) {
+    return Attempt(
+      Verdict.incomplete,
+      'Each answer must be ${Puzzle.maxAnswerLength} characters or fewer.',
       '',
       expected,
     );

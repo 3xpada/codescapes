@@ -123,6 +123,15 @@ void main() {
       expect(checkPuzzle(byId(1), ['']).verdict, Verdict.incomplete);
     });
 
+    test('rejects answers that exceed the input limit', () {
+      final attempt = checkPuzzle(byId(1), [
+        'a' * (Puzzle.maxAnswerLength + 1),
+      ]);
+
+      expect(attempt.verdict, Verdict.incomplete);
+      expect(attempt.message, contains('${Puzzle.maxAnswerLength}'));
+    });
+
     test('ran but wrong output', () {
       final a = checkPuzzle(byId(5), ['>=']);
       expect(a.verdict, Verdict.wrongOutput);

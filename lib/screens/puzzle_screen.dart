@@ -1153,6 +1153,7 @@ class _PuzzleScreenState extends State<PuzzleScreen>
       margin: const EdgeInsets.symmetric(horizontal: 4),
       child: TextField(
         controller: controller,
+        maxLength: Puzzle.maxAnswerLength,
         textAlignVertical: TextAlignVertical.center,
         cursorColor: _palette.accent,
         autocorrect: false,
@@ -1173,6 +1174,7 @@ class _PuzzleScreenState extends State<PuzzleScreen>
           fillColor: _palette.inputBg,
           hintText: '___',
           hintStyle: TextStyle(color: _palette.muted),
+          counterText: '',
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
             borderSide: BorderSide(
