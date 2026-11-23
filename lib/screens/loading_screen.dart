@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
+import '../app_state.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_background.dart';
 import '../widgets/codescape_logo.dart';
 import 'home_screen.dart';
+import 'registration_screen.dart';
 
 class LoadingScreen extends StatefulWidget {
   const LoadingScreen({super.key});
@@ -16,6 +19,7 @@ class _LoadingScreenState extends State<LoadingScreen>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
   bool _navigated = false;
+  String? _startupError;
 
   @override
   void initState() {
@@ -30,10 +34,37 @@ class _LoadingScreenState extends State<LoadingScreen>
   void _onAnimationStatusChanged(AnimationStatus status) {
     if (status == AnimationStatus.completed && mounted && !_navigated) {
       _navigated = true;
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute<void>(builder: (_) => const CodeScapeHome()),
-      );
+      _openApp();
     }
+  }
+
+  Future<void> _openApp() async {
+    try {
+      await gameProgress.load();
+      final preferences = await SharedPreferences.getInstance();
+      if (!mounted) return;
+
+      final username = preferences.getString('player_username');
+      final nextScreen = username == null || username.trim().isEmpty
+          ? const RegistrationScreen()
+          : const CodeScapeHome();
+      Navigator.of(context)
+          .pushReplacement(MaterialPageRoute<void>(builder: (_) => nextScreen));
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _startupError = 'Unable to load saved data: $error';
+        _navigated = false;
+      });
+    }
+  }
+
+  void _retryStartup() {
+    setState(() {
+      _startupError = null;
+      _navigated = true;
+    });
+    _openApp();
   }
 
   @override
@@ -117,7 +148,8 @@ class _LoadingScreenState extends State<LoadingScreen>
                           ),
                           const SizedBox(height: 16),
                           Text(
-                            messages[messageIndex],
+                            _startupError ?? messages[messageIndex],
+                            textAlign: TextAlign.center,
                             style: TextStyle(
                               color: palette.text,
                               fontSize: 11,
@@ -125,6 +157,13 @@ class _LoadingScreenState extends State<LoadingScreen>
                               fontWeight: FontWeight.w700,
                             ),
                           ),
+                          if (_startupError != null) ...[
+                            const SizedBox(height: 16),
+                            TextButton(
+                              onPressed: _retryStartup,
+                              child: const Text('RETRY'),
+                            ),
+                          ],
                         ],
                       );
                     },

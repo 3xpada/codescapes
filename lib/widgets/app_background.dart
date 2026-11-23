@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../theme/app_colors.dart';
+import 'world_background.dart';
 
 class AppBackground extends StatelessWidget {
   const AppBackground({super.key, required this.child});
@@ -28,6 +29,7 @@ class AppBackground extends StatelessWidget {
           fit: StackFit.expand,
           children: [
             ColoredBox(color: palette.bgTop),
+            const Positioned.fill(child: WorldBackground()),
             child,
           ],
         ),

@@ -4,10 +4,10 @@ import '../theme/app_colors.dart';
 import '../widgets/app_background.dart';
 
 class SimplePage extends StatelessWidget {
+  const SimplePage({super.key, required this.title, required this.message});
+
   final String title;
   final String message;
-
-  const SimplePage({super.key, required this.title, required this.message});
 
   @override
   Widget build(BuildContext context) {

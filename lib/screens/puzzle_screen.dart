@@ -1,24 +1,32 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../app_state.dart';
+import '../audio/game_audio.dart';
+import '../engine/achievement.dart';
 import '../widgets/app_background.dart';
 import '../theme/app_colors.dart';
 import '../engine/game_progress_manager.dart';
 import '../engine/puzzle.dart';
+import '../engine/programming_language.dart';
+import '../widgets/code_bot_mascot.dart';
 
 class PuzzleScreen extends StatefulWidget {
-  const PuzzleScreen({super.key});
+  const PuzzleScreen({super.key, this.language = ProgrammingLanguage.python});
+
+  final ProgrammingLanguage language;
 
   @override
   State<PuzzleScreen> createState() => _PuzzleScreenState();
 }
 
-class _PuzzleScreenState extends State<PuzzleScreen> {
-  static const double _gap = 16; // one spacing value used everywhere
-  static const double _pagePad = 20;
+class _PuzzleScreenState extends State<PuzzleScreen>
+    with SingleTickerProviderStateMixin {
+  static const double _gap = 12;
+  static const double _pagePad = 16;
 
   List<Puzzle> _puzzles = [];
   int _currentIndex = 0;
@@ -27,18 +35,34 @@ class _PuzzleScreenState extends State<PuzzleScreen> {
   final GameProgress _progress = gameProgress; // shared app-wide
 
   final List<TextEditingController> _controllers = [];
-  Attempt? _lastAttempt;
+  String _mascotMessage = "I'm Byte. Let's solve this level together.";
+  String? _pinnedMascotHint;
+  bool _showMascotBubble = false;
+  Timer? _mascotBubbleTimer;
+  late final AnimationController _mascotFloatController;
+  late final Animation<double> _mascotFloatOffset;
   bool _isExecuting = false;
   AppPalette get _palette => context.appPalette;
 
   @override
   void initState() {
     super.initState();
+    unawaited(gameAudio.enterGameplay());
+    _mascotFloatController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1800),
+    )..repeat(reverse: true);
+    _mascotFloatOffset = Tween<double>(begin: 0, end: -5).animate(
+      CurvedAnimation(parent: _mascotFloatController, curve: Curves.easeInOut),
+    );
     _loadPuzzles();
   }
 
   @override
   void dispose() {
+    _mascotBubbleTimer?.cancel();
+    _mascotFloatController.dispose();
+    unawaited(gameAudio.leaveGameplay());
     for (final c in _controllers) {
       c.dispose();
     }
@@ -51,24 +75,39 @@ class _PuzzleScreenState extends State<PuzzleScreen> {
       _loadError = null;
     });
     try {
-      final jsonString = await rootBundle.loadString(
-        'assets/puzzles/puzzles.json',
-      );
+      final jsonString = await rootBundle.loadString(widget.language.assetPath);
       final data = jsonDecode(jsonString);
       final list = (data['puzzles'] as List)
           .map((j) => Puzzle.fromJson(j as Map<String, dynamic>))
           .toList();
+      await _progress.load();
       if (!mounted) return;
+      if (list.isNotEmpty) {
+        final savedIndex = _progress.getCurrentPuzzleIndex(widget.language);
+        final restoredIndex = savedIndex.clamp(0, list.length - 1).toInt();
+        if (restoredIndex != savedIndex) {
+          await _progress.setCurrentPuzzleIndex(
+            restoredIndex,
+            language: widget.language,
+          );
+        }
+        _currentIndex = restoredIndex;
+      }
       setState(() {
         _puzzles = list;
         _isLoading = false;
         _initControllers();
       });
+      if (list.isNotEmpty) {
+        _say(_mascotMessage, persistent: _pinnedMascotHint != null);
+      }
     } catch (error) {
       if (!mounted) return;
       setState(() {
         _isLoading = false;
-        _loadError = 'Unable to load puzzles: $error';
+        _loadError = error is MissingPluginException
+            ? 'Local saves need a full app restart after adding the storage plugin. Stop the app completely, then run it again; hot reload cannot install native plugins.'
+            : 'Unable to load game data: $error';
       });
     }
   }
@@ -83,13 +122,20 @@ class _PuzzleScreenState extends State<PuzzleScreen> {
       for (int i = 0; i < puzzle.blankCount; i++) {
         _controllers.add(TextEditingController());
       }
+      final hintsCount = _progress
+          .getUnlockedHints(puzzle.id)
+          .clamp(0, puzzle.hints.length)
+          .toInt();
+      _pinnedMascotHint = hintsCount == 0 ? null : puzzle.hints[hintsCount - 1];
+      _mascotMessage =
+          _pinnedMascotHint ?? "I'm Byte. Let's solve this level together.";
     }
-    _lastAttempt = null;
   }
 
   void _runCode() {
     if (_puzzles.isEmpty) return;
     FocusScope.of(context).unfocus();
+    unawaited(gameAudio.playEffect(GameSoundEffect.tap));
     setState(() {
       _isExecuting = true;
     });
@@ -97,134 +143,117 @@ class _PuzzleScreenState extends State<PuzzleScreen> {
     final puzzle = _puzzles[_currentIndex];
     final answers = _controllers.map((c) => c.text).toList();
 
-    Future.delayed(const Duration(milliseconds: 350), () {
+    Future.delayed(const Duration(milliseconds: 350), () async {
       final attempt = checkPuzzle(puzzle, answers);
+      var rewarded = false;
+      var newlyUnlockedAchievements = <AchievementProgress>[];
+      if (attempt.verdict == Verdict.correct) {
+        rewarded = await _progress.completePuzzle(
+          puzzle.id,
+          language: puzzle.language,
+        );
+        newlyUnlockedAchievements = _progress.takeNewlyUnlockedAchievements();
+      }
       if (!mounted) return;
+      unawaited(
+        gameAudio.playEffect(
+          attempt.verdict == Verdict.correct
+              ? GameSoundEffect.success
+              : GameSoundEffect.error,
+        ),
+      );
       setState(() {
-        _lastAttempt = attempt;
         _isExecuting = false;
       });
-
-      if (attempt.verdict == Verdict.correct) {
-        final rewarded = _progress.completePuzzle(puzzle.id);
-        if (rewarded && mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Row(
-                children: [
-                  Icon(Icons.monetization_on_rounded, color: _palette.onAccent),
-                  const SizedBox(width: 10),
-                  Text(
-                    'PUZZLE SOLVED! +${GameProgress.puzzleReward} COINS',
-                    style: TextStyle(
-                      color: _palette.onAccent,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-              backgroundColor: _palette.success,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              duration: const Duration(seconds: 2),
-            ),
-          );
-        }
-      }
+      _say(
+        attempt.verdict == Verdict.correct
+            ? 'Excellent work! You solved this one.'
+            : attempt.message,
+      );
+      await _showResultDialog(
+        attempt,
+        rewarded: rewarded,
+        newlyUnlockedAchievements: newlyUnlockedAchievements,
+      );
     });
   }
 
-  void _buyHint() {
+  Future<void> _buyHint() async {
     if (_puzzles.isEmpty) return;
     final puzzle = _puzzles[_currentIndex];
     const hintCost = 10;
 
     final currentUnlocked = _progress.getUnlockedHints(puzzle.id);
     if (currentUnlocked >= puzzle.hints.length) {
-      _snack(
-        'All hints for this level are already unlocked!',
-        _palette.secondary,
-      );
+      _say("You've unlocked all my hints for this level.");
       return;
     }
 
-    final success = _progress.unlockHint(
+    final success = await _progress.unlockHint(
       puzzle.id,
       hintCost,
       puzzle.hints.length,
     );
-    if (success) {
-      setState(() {});
-      _snack(
-        'Hint #${currentUnlocked + 1} unlocked (-$hintCost coins)',
-        _palette.secondary,
-      );
-    } else {
-      _snack(
-        'Not enough coins! (Need $hintCost, you have ${_progress.coins})',
-        _palette.danger,
+    if (!mounted) return;
+    final newlyUnlockedAchievements = success
+        ? _progress.takeNewlyUnlockedAchievements()
+        : <AchievementProgress>[];
+    if (newlyUnlockedAchievements.isNotEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Achievement unlocked: ${newlyUnlockedAchievements.map((item) => item.definition.title).join(', ')}',
+          ),
+        ),
       );
     }
+    final unlockedHintsCount = _progress.getUnlockedHints(puzzle.id);
+    _say(
+      success
+          ? puzzle.hints[unlockedHintsCount - 1]
+          : 'You need $hintCost coins for another hint. Keep solving to earn more.',
+      persistent: success,
+    );
+    unawaited(
+      gameAudio.playEffect(
+        success ? GameSoundEffect.hint : GameSoundEffect.error,
+      ),
+    );
   }
 
-  void _snack(String message, Color color) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(message, style: TextStyle(color: _palette.text)),
-          backgroundColor: color,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
-          duration: const Duration(milliseconds: 1400),
-        ),
-      );
-  }
-
-  void _nextLevel() {
-    if (_currentIndex < _puzzles.length - 1) {
+  void _say(String message, {bool persistent = false}) {
+    _mascotBubbleTimer?.cancel();
+    if (!mounted) return;
+    setState(() {
+      _mascotMessage = message;
+      _showMascotBubble = true;
+      if (persistent) _pinnedMascotHint = message;
+    });
+    if (persistent) return;
+    _mascotBubbleTimer = Timer(const Duration(seconds: 4), () {
+      if (!mounted) return;
       setState(() {
-        _currentIndex++;
+        final pinnedHint = _pinnedMascotHint;
+        if (pinnedHint == null) {
+          _showMascotBubble = false;
+        } else {
+          _mascotMessage = pinnedHint;
+        }
+      });
+    });
+  }
+
+  Future<void> _nextLevel() async {
+    if (_currentIndex < _puzzles.length - 1) {
+      final nextIndex = _currentIndex + 1;
+      setState(() {
+        _currentIndex = nextIndex;
         _initControllers();
       });
-    } else {
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          backgroundColor: _palette.card,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-            side: BorderSide(color: _palette.border),
-          ),
-          title: Text(
-            'WORLD COMPLETED!',
-            style: TextStyle(
-              color: _palette.accent,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          content: Text(
-            'Amazing! You have conquered every single puzzle in Codescape!',
-            style: TextStyle(color: _palette.muted),
-          ),
-          actions: [
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _palette.accent,
-                foregroundColor: _palette.onAccent,
-              ),
-              onPressed: () => Navigator.pop(context),
-              child: const Text(
-                'AWESOME',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ),
-          ],
-        ),
+      _say(_mascotMessage, persistent: _pinnedMascotHint != null);
+      await _progress.setCurrentPuzzleIndex(
+        nextIndex,
+        language: widget.language,
       );
     }
   }
@@ -288,29 +317,102 @@ class _PuzzleScreenState extends State<PuzzleScreen> {
           child: Column(
             children: [
               _buildHeader(),
+              _buildProgressStrip(),
+              _buildFloatingMascot(),
               Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(_pagePad, 4, _pagePad, 32),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      _buildStoryCard(puzzle),
-                      const SizedBox(height: _gap + 4),
-                      _sectionLabel('CODE BLOCK PUZZLE'),
-                      const SizedBox(height: 10),
-                      _buildCodeCard(puzzle),
-                      const SizedBox(height: _gap + 4),
-                      _buildActionRow(unlockedHintsCount),
-                      if (unlockedHintsCount > 0) ...[
-                        const SizedBox(height: _gap),
-                        _buildHintsPanel(puzzle, unlockedHintsCount),
-                      ],
-                      if (_lastAttempt != null) ...[
-                        const SizedBox(height: _gap),
-                        _buildVerdictCard(_lastAttempt!),
-                      ],
-                    ],
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 720),
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(
+                        _pagePad,
+                        4,
+                        _pagePad,
+                        24,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          _buildStoryCard(puzzle),
+                          const SizedBox(height: _gap),
+                          _sectionLabel('CODE BLOCK PUZZLE'),
+                          const SizedBox(height: 8),
+                          _buildCodeCard(puzzle),
+                          const SizedBox(height: _gap),
+                          _buildActionRow(unlockedHintsCount),
+                        ],
+                      ),
+                    ),
                   ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFloatingMascot() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(_pagePad, 0, _pagePad, 6),
+      child: SizedBox(
+        width: double.infinity,
+        child: Align(
+          alignment: Alignment.centerRight,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 220),
+                transitionBuilder: (child, animation) => FadeTransition(
+                  opacity: animation,
+                  child: ScaleTransition(scale: animation, child: child),
+                ),
+                child: _showMascotBubble
+                    ? Container(
+                        key: ValueKey(_mascotMessage),
+                        constraints: const BoxConstraints(maxWidth: 220),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 9,
+                        ),
+                        decoration: BoxDecoration(
+                          color: _palette.card,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: _palette.border),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.08),
+                              blurRadius: 10,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: Text(
+                          _mascotMessage,
+                          maxLines: 4,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: _palette.text,
+                            fontSize: 12,
+                            height: 1.35,
+                          ),
+                        ),
+                      )
+                    : const SizedBox.shrink(key: ValueKey('hidden-bubble')),
+              ),
+              const SizedBox(width: 8),
+              AnimatedBuilder(
+                animation: _mascotFloatOffset,
+                child: const Tooltip(
+                  message: 'Byte, your coding companion',
+                  child: CodeBotMascot(size: 48),
+                ),
+                builder: (context, child) => Transform.translate(
+                  offset: Offset(0, _mascotFloatOffset.value),
+                  child: child,
                 ),
               ),
             ],
@@ -328,7 +430,10 @@ class _PuzzleScreenState extends State<PuzzleScreen> {
         children: [
           IconButton(
             tooltip: 'Back',
-            onPressed: () => Navigator.pop(context),
+            onPressed: () {
+              unawaited(gameAudio.playEffect(GameSoundEffect.tap));
+              Navigator.pop(context);
+            },
             style: IconButton.styleFrom(
               backgroundColor: _palette.card,
               foregroundColor: _palette.muted,
@@ -398,6 +503,50 @@ class _PuzzleScreenState extends State<PuzzleScreen> {
     );
   }
 
+  Widget _buildProgressStrip() {
+    final progress = (_currentIndex + 1) / _puzzles.length;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(_pagePad, 0, _pagePad, 8),
+      child: Row(
+        children: [
+          Icon(Icons.bolt_rounded, color: _palette.accent, size: 16),
+          const SizedBox(width: 6),
+          Text(
+            '${widget.language.label.toUpperCase()} QUEST',
+            style: TextStyle(
+              color: _palette.text,
+              fontSize: 10,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 1,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: progress,
+                minHeight: 5,
+                backgroundColor: _palette.border,
+                color: _palette.accent,
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Text(
+            'LEVEL ${_currentIndex + 1}',
+            style: TextStyle(
+              color: _palette.secondary,
+              fontSize: 10,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.6,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _sectionLabel(String text) {
     return Text(
       text,
@@ -412,7 +561,7 @@ class _PuzzleScreenState extends State<PuzzleScreen> {
 
   Widget _buildStoryCard(Puzzle puzzle) {
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: _palette.card,
         borderRadius: BorderRadius.circular(22),
@@ -446,10 +595,7 @@ class _PuzzleScreenState extends State<PuzzleScreen> {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 9,
-                  vertical: 6,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
                 decoration: BoxDecoration(
                   color: _palette.accent.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
@@ -458,7 +604,7 @@ class _PuzzleScreenState extends State<PuzzleScreen> {
                   ),
                 ),
                 child: Text(
-                  'PYTHON',
+                  puzzle.language.label.toUpperCase(),
                   style: TextStyle(
                     color: _palette.accent,
                     fontSize: 10,
@@ -469,12 +615,12 @@ class _PuzzleScreenState extends State<PuzzleScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           Text(
             puzzle.story,
             style: TextStyle(fontSize: 14, height: 1.5, color: _palette.muted),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 10),
           Text(
             "WHAT YOU'RE CODING",
             style: TextStyle(
@@ -494,7 +640,7 @@ class _PuzzleScreenState extends State<PuzzleScreen> {
               fontWeight: FontWeight.w600,
             ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 10),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
@@ -536,7 +682,7 @@ class _PuzzleScreenState extends State<PuzzleScreen> {
 
   Widget _buildCodeCard(Puzzle puzzle) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: _palette.card,
         borderRadius: BorderRadius.circular(22),
@@ -560,7 +706,7 @@ class _PuzzleScreenState extends State<PuzzleScreen> {
       children: [
         Expanded(
           child: SizedBox(
-            height: 56,
+            height: 50,
             child: ElevatedButton.icon(
               onPressed: _isExecuting ? null : _runCode,
               icon: _isExecuting
@@ -604,7 +750,7 @@ class _PuzzleScreenState extends State<PuzzleScreen> {
           children: [
             SizedBox(
               width: 84,
-              height: 56,
+              height: 50,
               child: Tooltip(
                 message: 'Buy a hint for 10 coins',
                 child: ElevatedButton(
@@ -669,131 +815,282 @@ class _PuzzleScreenState extends State<PuzzleScreen> {
     );
   }
 
-  Widget _buildHintsPanel(Puzzle puzzle, int unlockedHintsCount) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: _palette.secondary.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: _palette.secondary.withValues(alpha: 0.35)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.lightbulb, color: _palette.secondary, size: 18),
-              const SizedBox(width: 8),
-              Text(
-                'PURCHASED HINTS',
-                style: TextStyle(
-                  color: _palette.secondary,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
-                  letterSpacing: 1,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          for (int i = 0; i < unlockedHintsCount; i++)
-            Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: Text(
-                '• ${puzzle.hints[i]}',
-                style: TextStyle(
-                  color: _palette.text,
-                  fontSize: 13,
-                  height: 1.4,
-                ),
-              ),
-            ),
-        ],
+  Future<void> _showResultDialog(
+    Attempt attempt, {
+    required bool rewarded,
+    required List<AchievementProgress> newlyUnlockedAchievements,
+  }) {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => _buildResultDialog(
+        dialogContext,
+        attempt,
+        rewarded: rewarded,
+        newlyUnlockedAchievements: newlyUnlockedAchievements,
       ),
     );
   }
 
-  Widget _buildVerdictCard(Attempt attempt) {
+  Widget _buildResultDialog(
+    BuildContext dialogContext,
+    Attempt attempt, {
+    required bool rewarded,
+    required List<AchievementProgress> newlyUnlockedAchievements,
+  }) {
+    final correct = attempt.verdict == Verdict.correct;
+    final worldComplete = _currentIndex == _puzzles.length - 1;
     final color = _getVerdictColor(attempt.verdict);
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: color, width: 1.5),
+    final actionLabel = !correct
+        ? 'TRY AGAIN'
+        : worldComplete
+        ? 'RETURN TO WORLDS'
+        : 'NEXT LEVEL';
+
+    return Dialog(
+      backgroundColor: _palette.card,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(24),
+        side: BorderSide(color: _palette.border),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 420),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Icon(_getVerdictIcon(attempt.verdict), color: color),
-              const SizedBox(width: 10),
+              Row(
+                children: [
+                  const CodeBotMascot(size: 56),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'BYTE',
+                          style: TextStyle(
+                            color: _palette.accent,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 1.2,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Row(
+                          children: [
+                            Icon(
+                              _getVerdictIcon(attempt.verdict),
+                              color: color,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 6),
+                            Flexible(
+                              child: Text(
+                                correct && worldComplete
+                                    ? 'WORLD COMPLETE'
+                                    : _getVerdictTitle(attempt.verdict),
+                                style: TextStyle(
+                                  color: color,
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 15,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 18),
               Text(
-                _getVerdictTitle(attempt.verdict),
+                attempt.message,
                 style: TextStyle(
-                  color: color,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 15,
+                  color: _palette.text,
+                  fontSize: 14,
+                  height: 1.45,
                 ),
               ),
+              if (attempt.output.isNotEmpty) ...[
+                const SizedBox(height: 14),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: _palette.inputBg,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'YOUR OUTPUT',
+                        style: TextStyle(
+                          color: _palette.muted,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      SelectableText(
+                        attempt.output,
+                        style: TextStyle(
+                          fontFamily: 'monospace',
+                          color: _palette.success,
+                          fontSize: 12,
+                          height: 1.4,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              if (rewarded) ...[
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.monetization_on_rounded,
+                      color: _palette.accent,
+                      size: 18,
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        '+${GameProgress.puzzleReward} coins earned',
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: _palette.accent,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+              if (newlyUnlockedAchievements.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: _palette.accent.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: _palette.accent.withValues(alpha: 0.45),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        newlyUnlockedAchievements.length == 1
+                            ? 'ACHIEVEMENT UNLOCKED'
+                            : 'ACHIEVEMENTS UNLOCKED',
+                        style: TextStyle(
+                          color: _palette.accent,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      for (final achievement in newlyUnlockedAchievements)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: Row(
+                            children: [
+                              Icon(
+                                achievement.definition.icon,
+                                color: _palette.accent,
+                                size: 16,
+                              ),
+                              const SizedBox(width: 7),
+                              Expanded(
+                                child: Text(
+                                  achievement.definition.title,
+                                  style: TextStyle(
+                                    color: _palette.text,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+              const SizedBox(height: 20),
+              SizedBox(
+                height: 48,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    unawaited(gameAudio.playEffect(GameSoundEffect.tap));
+                    Navigator.of(dialogContext).pop();
+                    if (!correct) return;
+                    if (worldComplete) {
+                      Navigator.of(context).pop();
+                    } else {
+                      _nextLevel();
+                    }
+                  },
+                  icon: Icon(
+                    correct && worldComplete
+                        ? Icons.public_rounded
+                        : correct
+                        ? Icons.arrow_forward_rounded
+                        : Icons.refresh_rounded,
+                    color: _palette.onAccent,
+                  ),
+                  label: Text(
+                    actionLabel,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: _palette.onAccent,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.6,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _palette.accent,
+                    foregroundColor: _palette.onAccent,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                ),
+              ),
+              if (correct) ...[
+                const SizedBox(height: 6),
+                TextButton(
+                  onPressed: () {
+                    unawaited(gameAudio.playEffect(GameSoundEffect.tap));
+                    Navigator.of(dialogContext).pop();
+                  },
+                  child: Text(
+                    'STAY ON THIS LEVEL',
+                    style: TextStyle(
+                      color: _palette.muted,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 11,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            attempt.message,
-            style: TextStyle(fontSize: 13, height: 1.4, color: _palette.muted),
-          ),
-          if (attempt.output.isNotEmpty) ...[
-            const SizedBox(height: 10),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: _palette.inputBg,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Text(
-                attempt.output,
-                style: TextStyle(
-                  fontFamily: 'monospace',
-                  color: _palette.success,
-                  fontSize: 12,
-                ),
-              ),
-            ),
-          ],
-          if (attempt.verdict == Verdict.correct) ...[
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton.icon(
-                onPressed: _nextLevel,
-                icon: Icon(
-                  Icons.arrow_forward_rounded,
-                  color: _palette.onAccent,
-                ),
-                label: Text(
-                  'CONTINUE',
-                  style: TextStyle(
-                    color: _palette.onAccent,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 1,
-                  ),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: _palette.accent,
-                  foregroundColor: _palette.onAccent,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ],
+        ),
       ),
     );
   }

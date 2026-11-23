@@ -64,13 +64,67 @@
       "id": 6,
       "title": "Add It Up",
       "story": "Add the numbers 1 to 5 to unlock the vault.",
-      "task": "Use a for loop to add 1 through 5 and print the total.",
+      "task": "Use a for loop to add each number from 1 through 5 to total, then print it.",
       "template": "total = 0\nfor n in range(1, ___):\n    total = total + ___\nprint(total)",
       "hints": [
         "range(1, 6) gives 1, 2, 3, 4, 5. The end number is not included.",
         "Inside the loop, add the loop variable n to total."
       ],
-      "expectedOutput": "15"
+      "expectedOutput": "15",
+      "requiredAnswers": ["6", "n"],
+      "solutionFeedback": "That prints 15, but adds 5 three times. range stops before its end value, so include 6 and add n on each pass."
+    },
+    {
+      "id": 7,
+      "title": "Market Math",
+      "story": "The market's price scanner needs a quick multiplication check.",
+      "task": "Multiply the price by the quantity and print the total.",
+      "template": "price = 4\nquantity = 3\nprint(price * ___)",
+      "hints": [
+        "The quantity is stored in the variable named quantity.",
+        "Multiply 4 by 3 to get 12."
+      ],
+      "expectedOutput": "12",
+      "requiredAnswers": ["quantity"]
+    },
+    {
+      "id": 8,
+      "title": "Weather Station",
+      "story": "The station marks readings below 20 as cool.",
+      "task": "Use a comparison to print cool for a temperature of 18.",
+      "template": "temperature = 18\nif temperature ___ 20:\n    print(\"warm\")\nelse:\n    print(\"cool\")",
+      "hints": [
+        "The warm branch should only run for a temperature of at least 20.",
+        "Use >= so 18 takes the cool branch."
+      ],
+      "expectedOutput": "cool",
+      "requiredAnswers": [">="]
+    },
+    {
+      "id": 9,
+      "title": "Long Addition",
+      "story": "The archive counts every number from 1 through 10.",
+      "task": "Use a loop to add all numbers from 1 through 10.",
+      "template": "total = 0\nfor n in range(1, ___):\n    total += n\nprint(total)",
+      "hints": [
+        "range stops before its second number.",
+        "Use 11 as the stopping value to include 10."
+      ],
+      "expectedOutput": "55",
+      "requiredAnswers": ["11"]
+    },
+    {
+      "id": 10,
+      "title": "Nested Signal",
+      "story": "Two signal rows each need three pulses to activate the beacon.",
+      "task": "Nest one loop inside another to print six pulses.",
+      "template": "for row in range(___):\n    for pulse in range(3):\n        print(\"Pulse\")",
+      "hints": [
+        "The inner loop prints three times for every outer loop pass.",
+        "Run the outer loop twice to print six pulses."
+      ],
+      "expectedOutput": "Pulse\nPulse\nPulse\nPulse\nPulse\nPulse",
+      "requiredAnswers": ["2"]
     }
   ]
 }

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'app_state.dart';
 import 'theme/app_colors.dart';
-import 'screens/home_screen.dart';
+import 'screens/loading_screen.dart';
 
 void main() {
   runApp(const CodescapeApp());
@@ -13,15 +13,16 @@ class CodescapeApp extends StatelessWidget {
 
   ThemeData _buildTheme(AppThemeOption option) {
     final palette = AppColors.forTheme(option);
-    final scheme = ColorScheme.fromSeed(
-      seedColor: palette.accent,
-      brightness: palette.brightness,
-    ).copyWith(
-      primary: palette.accent,
-      secondary: palette.secondary,
-      surface: palette.card,
-      error: palette.danger,
-    );
+    final scheme =
+        ColorScheme.fromSeed(
+          seedColor: palette.accent,
+          brightness: palette.brightness,
+        ).copyWith(
+          primary: palette.accent,
+          secondary: palette.secondary,
+          surface: palette.card,
+          error: palette.danger,
+        );
 
     return ThemeData(
       useMaterial3: true,
@@ -76,7 +77,7 @@ class CodescapeApp extends StatelessWidget {
         color: AppColors.forTheme(option).bgTop,
         debugShowCheckedModeBanner: false,
         theme: _buildTheme(option),
-        home: const CodeScapeHome(),
+        home: const LoadingScreen(),
       ),
     );
   }

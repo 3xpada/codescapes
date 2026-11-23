@@ -1,4 +1,7 @@
 import 'interpreter.dart';
+import 'java_interpreter.dart';
+import 'c_family_interpreter.dart';
+import 'programming_language.dart';
 
 /// A fill-in-the-blank level. Blanks in [template] are written as ___ .
 class Puzzle {
@@ -11,6 +14,9 @@ class Puzzle {
   final String template;
   final List<String> hints;
   final String expectedOutput;
+  final List<String>? requiredAnswers;
+  final String? solutionFeedback;
+  final ProgrammingLanguage language;
 
   const Puzzle({
     required this.id,
@@ -20,6 +26,9 @@ class Puzzle {
     required this.template,
     required this.hints,
     required this.expectedOutput,
+    this.requiredAnswers,
+    this.solutionFeedback,
+    this.language = ProgrammingLanguage.python,
   });
 
   factory Puzzle.fromJson(Map<String, dynamic> j) => Puzzle(
@@ -30,6 +39,13 @@ class Puzzle {
     template: j['template'] as String,
     hints: List<String>.from(j['hints'] as List),
     expectedOutput: j['expectedOutput'] as String,
+    requiredAnswers: j['requiredAnswers'] == null
+        ? null
+        : List<String>.from(j['requiredAnswers'] as List),
+    solutionFeedback: j['solutionFeedback'] as String?,
+    language: ProgrammingLanguage.values.byName(
+      j['language'] as String? ?? ProgrammingLanguage.python.name,
+    ),
   );
 
   int get blankCount => blankMarker.allMatches(template).length;
@@ -75,7 +91,13 @@ Attempt checkPuzzle(Puzzle p, List<String> answers) {
     );
   }
 
-  final result = runProgram(p.fill(answers));
+  final code = p.fill(answers);
+  final result = switch (p.language) {
+    ProgrammingLanguage.python => runProgram(code),
+    ProgrammingLanguage.java => runJavaProgram(code),
+    ProgrammingLanguage.csharp => runCSharpProgram(code),
+    ProgrammingLanguage.c => runCProgram(code),
+  };
 
   if (result.error != null) {
     return Attempt(Verdict.error, result.error.toString(), '', expected);
@@ -83,6 +105,22 @@ Attempt checkPuzzle(Puzzle p, List<String> answers) {
 
   final actual = _normalize(result.output);
   if (actual == expected) {
+    final requiredAnswers = p.requiredAnswers;
+    final requiredAnswersMatch =
+        requiredAnswers == null ||
+        (requiredAnswers.length == answers.length &&
+            List.generate(answers.length, (index) => index).every(
+              (index) => requiredAnswers[index] == answers[index].trim(),
+            ));
+    if (!requiredAnswersMatch) {
+      return Attempt(
+        Verdict.wrongOutput,
+        p.solutionFeedback ??
+            'The output matches, but the code does not follow the task.',
+        actual,
+        expected,
+      );
+    }
     return Attempt(
       Verdict.correct,
       'Your code printed exactly what the level wants.',

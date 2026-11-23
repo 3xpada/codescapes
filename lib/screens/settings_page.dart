@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../app_state.dart';
+import '../audio/game_audio.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_background.dart';
 
@@ -12,8 +15,11 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  bool soundEffects = true;
-  bool backgroundMusic = true;
+  @override
+  void initState() {
+    super.initState();
+    unawaited(gameAudio.initialize());
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -46,21 +52,29 @@ class _SettingsPageState extends State<SettingsPage> {
                 const SizedBox(height: 28),
                 _sectionTitle('SOUND', palette),
                 const SizedBox(height: 12),
-                _switchTile(
-                  palette: palette,
-                  icon: Icons.volume_up_rounded,
-                  title: 'Sound effects',
-                  subtitle: 'Button sounds and game effects',
-                  value: soundEffects,
-                  onChanged: (value) => setState(() => soundEffects = value),
+                ListenableBuilder(
+                  listenable: gameAudio,
+                  builder: (context, _) => _switchTile(
+                    palette: palette,
+                    icon: Icons.volume_up_rounded,
+                    title: 'Sound effects',
+                    subtitle: 'Button sounds and game effects',
+                    value: gameAudio.soundEffectsEnabled,
+                    onChanged: (value) =>
+                        unawaited(gameAudio.setSoundEffectsEnabled(value)),
+                  ),
                 ),
-                _switchTile(
-                  palette: palette,
-                  icon: Icons.music_note_rounded,
-                  title: 'Background music',
-                  subtitle: 'Music during gameplay',
-                  value: backgroundMusic,
-                  onChanged: (value) => setState(() => backgroundMusic = value),
+                ListenableBuilder(
+                  listenable: gameAudio,
+                  builder: (context, _) => _switchTile(
+                    palette: palette,
+                    icon: Icons.music_note_rounded,
+                    title: 'Background music',
+                    subtitle: 'Music during gameplay',
+                    value: gameAudio.musicEnabled,
+                    onChanged: (value) =>
+                        unawaited(gameAudio.setMusicEnabled(value)),
+                  ),
                 ),
                 const SizedBox(height: 28),
                 _sectionTitle('ABOUT', palette),
@@ -237,7 +251,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'A pixel-style game for learning Python through short coding puzzles. Solve levels to earn coins and unlock hints.',
+                  'Explore language worlds through short coding puzzles. Solve levels to earn coins and unlock hints.',
                   style: TextStyle(
                     color: palette.muted,
                     fontSize: 13,

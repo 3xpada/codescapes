@@ -1,0 +1,143 @@
+{
+  "puzzles": [
+    {
+      "id": 101,
+      "language": "java",
+      "title": "First Output",
+      "story": "The foundry console is waiting for its first message.",
+      "task": "Use Java's println to display the greeting.",
+      "template": "public class Main {\n    public static void main(String[] args) {\n        System.out.println(\"___\");\n    }\n}",
+      "hints": [
+        "System.out.println writes the text inside its parentheses.",
+        "The target is the greeting the console should display."
+      ],
+      "expectedOutput": "Hello from Java!"
+    },
+    {
+      "id": 102,
+      "language": "java",
+      "title": "Bonus Points",
+      "story": "A small bonus will bring the score up to the target.",
+      "task": "Set the bonus, add it to the score, and print 15.",
+      "template": "public class Main {\n    public static void main(String[] args) {\n        int score = 10;\n        int bonus = ___;\n        System.out.println(score + bonus);\n    }\n}",
+      "hints": [
+        "The program starts with a score of 10.",
+        "Add 5 to 10 to reach the target of 15."
+      ],
+      "expectedOutput": "15"
+    },
+    {
+      "id": 103,
+      "language": "java",
+      "title": "Loop Totals",
+      "story": "Add the numbers 1 through 5 to power the foundry.",
+      "task": "Loop from 1 through 5, adding each loop value to total.",
+      "template": "public class Main {\n    public static void main(String[] args) {\n        int total = 0;\n        for (int n = 1; n < ___; n++) {\n            total = total + ___;\n        }\n        System.out.println(total);\n    }\n}",
+      "hints": [
+        "Java's loop stops before its end value, so use 6 to include 5.",
+        "Add the loop variable n on every pass."
+      ],
+      "expectedOutput": "15",
+      "requiredAnswers": ["6", "n"],
+      "solutionFeedback": "The output matches, but add each loop value from 1 through 5. Java stops before the end value and the loop variable is n."
+    },
+    {
+      "id": 104,
+      "language": "java",
+      "title": "Workshop Math",
+      "story": "A pair of gears combine their values to power the next station.",
+      "task": "Multiply the two values and print the result.",
+      "template": "public class Main {\n    public static void main(String[] args) {\n        int gears = 3;\n        int turns = 4;\n        System.out.println(gears * ___);\n    }\n}",
+      "hints": [
+        "The second value is stored in turns.",
+        "Three groups of four make 12."
+      ],
+      "expectedOutput": "12",
+      "requiredAnswers": ["turns"]
+    },
+    {
+      "id": 105,
+      "language": "java",
+      "title": "Name Tag",
+      "story": "The foundry is printing a welcome label for its newest coder.",
+      "task": "Fill in a name so the full welcome message is printed.",
+      "template": "public class Main {\n    public static void main(String[] args) {\n        String name = \"Ada\";\n        System.out.println(\"Welcome, \" + ___);\n    }\n}",
+      "hints": [
+        "The name has already been saved in a variable.",
+        "Use the variable name to join it to the welcome text."
+      ],
+      "expectedOutput": "Welcome, Ada",
+      "requiredAnswers": ["name"]
+    },
+    {
+      "id": 106,
+      "language": "java",
+      "title": "Count Up",
+      "story": "The foundry counter needs to report its first three ticks.",
+      "task": "Use a for loop to print 1, 2, and 3 on separate lines.",
+      "template": "public class Main {\n    public static void main(String[] args) {\n        for (int tick = 1; tick < ___; tick++) {\n            System.out.println(tick);\n        }\n    }\n}",
+      "hints": [
+        "The loop stops before the limit.",
+        "Use 4 to include 1, 2, and 3."
+      ],
+      "expectedOutput": "1\n2\n3",
+      "requiredAnswers": ["4"]
+    },
+    {
+      "id": 107,
+      "language": "java",
+      "title": "Power Sum",
+      "story": "Add the first four values to charge the foundry core.",
+      "task": "Loop through 1 to 4, adding each value to total.",
+      "template": "public class Main {\n    public static void main(String[] args) {\n        int total = 0;\n        for (int n = 1; n < ___; n++) {\n            total = total + ___;\n        }\n        System.out.println(total);\n    }\n}",
+      "hints": [
+        "The loop limit must be one more than the last value.",
+        "Add the current loop value to total each time."
+      ],
+      "expectedOutput": "10",
+      "requiredAnswers": ["5", "n"]
+    },
+    {
+      "id": 108,
+      "language": "java",
+      "title": "Square Sequence",
+      "story": "The foundry's calibration sequence sums the first three squares.",
+      "task": "Add n multiplied by itself for n values 1, 2, and 3.",
+      "template": "public class Main {\n    public static void main(String[] args) {\n        int total = 0;\n        for (int n = 1; n < ___; n++) {\n            total = total + ___;\n        }\n        System.out.println(total);\n    }\n}",
+      "hints": [
+        "Three values means the loop's exclusive limit is 4.",
+        "A square is a number multiplied by itself."
+      ],
+      "expectedOutput": "14",
+      "requiredAnswers": ["4", "n * n"]
+    },
+    {
+      "id": 109,
+      "language": "java",
+      "title": "Reverse Display",
+      "story": "A display counts down by showing the distance from five.",
+      "task": "Loop from 0 to 2 and print 5, 4, and 3.",
+      "template": "public class Main {\n    public static void main(String[] args) {\n        for (int step = 0; step < 3; step++) {\n            System.out.println(5 - ___);\n        }\n    }\n}",
+      "hints": [
+        "The loop variable starts at 0 and increases by one.",
+        "Subtract the current step from 5."
+      ],
+      "expectedOutput": "5\n4\n3",
+      "requiredAnswers": ["step"]
+    },
+    {
+      "id": 110,
+      "language": "java",
+      "title": "Grid Signals",
+      "story": "A two-row grid sends three numbered signals from each row.",
+      "task": "Use nested loops to print 0, 1, 2, 10, 11, and 12.",
+      "template": "public class Main {\n    public static void main(String[] args) {\n        for (int row = 0; row < ___; row++) {\n            for (int col = 0; col < ___; col++) {\n                System.out.println(row * 10 + col);\n            }\n        }\n    }\n}",
+      "hints": [
+        "The outer loop controls two rows; the inner loop controls three columns.",
+        "Use limits 2 and 3. The row value is multiplied by 10."
+      ],
+      "expectedOutput": "0\n1\n2\n10\n11\n12",
+      "requiredAnswers": ["2", "3"]
+    }
+  ]
+}

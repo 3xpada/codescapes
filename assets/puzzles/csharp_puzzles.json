@@ -1,0 +1,143 @@
+{
+  "puzzles": [
+    {
+      "id": 201,
+      "language": "csharp",
+      "title": "First Output",
+      "story": "The circuit console is ready for its first message.",
+      "task": "Use Console.WriteLine to display the greeting.",
+      "template": "using System;\nclass Program {\n    static void Main(string[] args) {\n        Console.WriteLine(\"___\");\n    }\n}",
+      "hints": [
+        "Console.WriteLine writes the text between its parentheses.",
+        "Enter the greeting the console should display."
+      ],
+      "expectedOutput": "Hello from C#!"
+    },
+    {
+      "id": 202,
+      "language": "csharp",
+      "title": "Bonus Points",
+      "story": "A small bonus will bring the score up to the target.",
+      "task": "Set the bonus, add it to the score, and print 15.",
+      "template": "using System;\nclass Program {\n    static void Main(string[] args) {\n        int score = 10;\n        int bonus = ___;\n        Console.WriteLine(score + bonus);\n    }\n}",
+      "hints": [
+        "The program starts with a score of 10.",
+        "Add 5 to 10 to reach the target of 15."
+      ],
+      "expectedOutput": "15"
+    },
+    {
+      "id": 203,
+      "language": "csharp",
+      "title": "Loop Totals",
+      "story": "Add the numbers 1 through 5 to power the circuit.",
+      "task": "Loop from 1 through 5, adding each loop value to total.",
+      "template": "using System;\nclass Program {\n    static void Main(string[] args) {\n        int total = 0;\n        for (int n = 1; n < ___; n++) {\n            total = total + ___;\n        }\n        Console.WriteLine(total);\n    }\n}",
+      "hints": [
+        "The loop stops before its end value, so use 6 to include 5.",
+        "Add the loop variable n on every pass."
+      ],
+      "expectedOutput": "15",
+      "requiredAnswers": ["6", "n"],
+      "solutionFeedback": "The output matches, but add each loop value from 1 through 5. The loop stops before its end value and the loop variable is n."
+    },
+    {
+      "id": 204,
+      "language": "csharp",
+      "title": "Workshop Math",
+      "story": "A pair of gears combine their values to power the next station.",
+      "task": "Multiply the two values and print the result.",
+      "template": "using System;\nclass Program {\n    static void Main(string[] args) {\n        int gears = 3;\n        int turns = 4;\n        Console.WriteLine(gears * ___);\n    }\n}",
+      "hints": [
+        "The second value is stored in turns.",
+        "Three groups of four make 12."
+      ],
+      "expectedOutput": "12",
+      "requiredAnswers": ["turns"]
+    },
+    {
+      "id": 205,
+      "language": "csharp",
+      "title": "Name Tag",
+      "story": "The circuit is printing a welcome label for its newest coder.",
+      "task": "Fill in a name so the full welcome message is printed.",
+      "template": "using System;\nclass Program {\n    static void Main(string[] args) {\n        string name = \"Ada\";\n        Console.WriteLine(\"Welcome, \" + ___);\n    }\n}",
+      "hints": [
+        "The name has already been saved in a variable.",
+        "Use the variable name to join it to the welcome text."
+      ],
+      "expectedOutput": "Welcome, Ada",
+      "requiredAnswers": ["name"]
+    },
+    {
+      "id": 206,
+      "language": "csharp",
+      "title": "Count Up",
+      "story": "The circuit counter needs to report its first three ticks.",
+      "task": "Use a for loop to print 1, 2, and 3 on separate lines.",
+      "template": "using System;\nclass Program {\n    static void Main(string[] args) {\n        for (int tick = 1; tick < ___; tick++) {\n            Console.WriteLine(tick);\n        }\n    }\n}",
+      "hints": [
+        "The loop stops before the limit.",
+        "Use 4 to include 1, 2, and 3."
+      ],
+      "expectedOutput": "1\n2\n3",
+      "requiredAnswers": ["4"]
+    },
+    {
+      "id": 207,
+      "language": "csharp",
+      "title": "Power Sum",
+      "story": "Add the first four values to charge the circuit core.",
+      "task": "Loop through 1 to 4, adding each value to total.",
+      "template": "using System;\nclass Program {\n    static void Main(string[] args) {\n        int total = 0;\n        for (int n = 1; n < ___; n++) {\n            total = total + ___;\n        }\n        Console.WriteLine(total);\n    }\n}",
+      "hints": [
+        "The loop limit must be one more than the last value.",
+        "Add the current loop value to total each time."
+      ],
+      "expectedOutput": "10",
+      "requiredAnswers": ["5", "n"]
+    },
+    {
+      "id": 208,
+      "language": "csharp",
+      "title": "Square Sequence",
+      "story": "The circuit's calibration sequence sums the first three squares.",
+      "task": "Add n multiplied by itself for n values 1, 2, and 3.",
+      "template": "using System;\nclass Program {\n    static void Main(string[] args) {\n        int total = 0;\n        for (int n = 1; n < ___; n++) {\n            total = total + ___;\n        }\n        Console.WriteLine(total);\n    }\n}",
+      "hints": [
+        "Three values means the loop's exclusive limit is 4.",
+        "A square is a number multiplied by itself."
+      ],
+      "expectedOutput": "14",
+      "requiredAnswers": ["4", "n * n"]
+    },
+    {
+      "id": 209,
+      "language": "csharp",
+      "title": "Reverse Display",
+      "story": "A display counts down by showing the distance from five.",
+      "task": "Loop from 0 to 2 and print 5, 4, and 3.",
+      "template": "using System;\nclass Program {\n    static void Main(string[] args) {\n        for (int step = 0; step < 3; step++) {\n            Console.WriteLine(5 - ___);\n        }\n    }\n}",
+      "hints": [
+        "The loop variable starts at 0 and increases by one.",
+        "Subtract the current step from 5."
+      ],
+      "expectedOutput": "5\n4\n3",
+      "requiredAnswers": ["step"]
+    },
+    {
+      "id": 210,
+      "language": "csharp",
+      "title": "Grid Signals",
+      "story": "A two-row grid sends three numbered signals from each row.",
+      "task": "Use nested loops to print 0, 1, 2, 10, 11, and 12.",
+      "template": "using System;\nclass Program {\n    static void Main(string[] args) {\n        for (int row = 0; row < ___; row++) {\n            for (int col = 0; col < ___; col++) {\n                Console.WriteLine(row * 10 + col);\n            }\n        }\n    }\n}",
+      "hints": [
+        "The outer loop controls two rows; the inner loop controls three columns.",
+        "Use limits 2 and 3. The row value is multiplied by 10."
+      ],
+      "expectedOutput": "0\n1\n2\n10\n11\n12",
+      "requiredAnswers": ["2", "3"]
+    }
+  ]
+}

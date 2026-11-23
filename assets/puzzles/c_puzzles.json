@@ -1,0 +1,143 @@
+{
+  "puzzles": [
+    {
+      "id": 301,
+      "language": "c",
+      "title": "First Output",
+      "story": "The workshop terminal is waiting for its first message.",
+      "task": "Use printf to greet the world.",
+      "template": "#include <stdio.h>\nint main() {\n    printf(\"Hello, ___!\\n\");\n    return 0;\n}",
+      "hints": [
+        "The text inside printf's quotes is what the terminal displays.",
+        "Fill in the name of the world we are greeting."
+      ],
+      "expectedOutput": "Hello, World!"
+    },
+    {
+      "id": 302,
+      "language": "c",
+      "title": "Bonus Points",
+      "story": "A small bonus will bring the score up to the target.",
+      "task": "Set the bonus, add it to the score, and print 15 with printf.",
+      "template": "#include <stdio.h>\nint main() {\n    int score = 10;\n    int bonus = ___;\n    printf(\"%d\\n\", score + bonus);\n    return 0;\n}",
+      "hints": [
+        "The program starts with a score of 10.",
+        "Add 5 to 10 to reach the target of 15."
+      ],
+      "expectedOutput": "15"
+    },
+    {
+      "id": 303,
+      "language": "c",
+      "title": "Loop Totals",
+      "story": "Add the numbers 1 through 5 to power the workshop.",
+      "task": "Loop from 1 through 5, adding each loop value to total.",
+      "template": "#include <stdio.h>\nint main() {\n    int total = 0;\n    for (int n = 1; n < ___; n++) {\n        total = total + ___;\n    }\n    printf(\"%d\\n\", total);\n    return 0;\n}",
+      "hints": [
+        "The loop stops before its end value, so use 6 to include 5.",
+        "Add the loop variable n on every pass."
+      ],
+      "expectedOutput": "15",
+      "requiredAnswers": ["6", "n"],
+      "solutionFeedback": "The output matches, but add each loop value from 1 through 5. The loop stops before its end value and the loop variable is n."
+    },
+    {
+      "id": 304,
+      "language": "c",
+      "title": "Workshop Math",
+      "story": "A pair of gears combine their values to power the next station.",
+      "task": "Multiply the two values and print the result.",
+      "template": "#include <stdio.h>\nint main() {\n    int gears = 3;\n    int turns = 4;\n    printf(\"%d\\n\", gears * ___);\n    return 0;\n}",
+      "hints": [
+        "The second value is stored in turns.",
+        "Three groups of four make 12."
+      ],
+      "expectedOutput": "12",
+      "requiredAnswers": ["turns"]
+    },
+    {
+      "id": 305,
+      "language": "c",
+      "title": "Signal Code",
+      "story": "The workshop terminal prints the value stored in its signal code.",
+      "task": "Set the code to 42 and print it with printf.",
+      "template": "#include <stdio.h>\nint main() {\n    int code = ___;\n    printf(\"Code %d\\n\", code);\n    return 0;\n}",
+      "hints": [
+        "The code is stored in the integer variable code.",
+        "Set code to 42."
+      ],
+      "expectedOutput": "Code 42",
+      "requiredAnswers": ["42"]
+    },
+    {
+      "id": 306,
+      "language": "c",
+      "title": "Count Up",
+      "story": "The workshop counter needs to report its first three ticks.",
+      "task": "Use a for loop to print 1, 2, and 3 on separate lines.",
+      "template": "#include <stdio.h>\nint main() {\n    for (int tick = 1; tick < ___; tick++) {\n        printf(\"%d\", tick);\n    }\n    return 0;\n}",
+      "hints": [
+        "The loop stops before the limit.",
+        "Use 4 to include 1, 2, and 3."
+      ],
+      "expectedOutput": "1\n2\n3",
+      "requiredAnswers": ["4"]
+    },
+    {
+      "id": 307,
+      "language": "c",
+      "title": "Power Sum",
+      "story": "Add the first four values to charge the workshop core.",
+      "task": "Loop through 1 to 4, adding each value to total.",
+      "template": "#include <stdio.h>\nint main() {\n    int total = 0;\n    for (int n = 1; n < ___; n++) {\n        total = total + ___;\n    }\n    printf(\"%d\", total);\n    return 0;\n}",
+      "hints": [
+        "The loop limit must be one more than the last value.",
+        "Add the current loop value to total each time."
+      ],
+      "expectedOutput": "10",
+      "requiredAnswers": ["5", "n"]
+    },
+    {
+      "id": 308,
+      "language": "c",
+      "title": "Square Sequence",
+      "story": "The workshop's calibration sequence sums the first three squares.",
+      "task": "Add n multiplied by itself for n values 1, 2, and 3.",
+      "template": "#include <stdio.h>\nint main() {\n    int total = 0;\n    for (int n = 1; n < ___; n++) {\n        total = total + ___;\n    }\n    printf(\"%d\", total);\n    return 0;\n}",
+      "hints": [
+        "Three values means the loop's exclusive limit is 4.",
+        "A square is a number multiplied by itself."
+      ],
+      "expectedOutput": "14",
+      "requiredAnswers": ["4", "n * n"]
+    },
+    {
+      "id": 309,
+      "language": "c",
+      "title": "Reverse Display",
+      "story": "A display counts down by showing the distance from five.",
+      "task": "Loop from 0 to 2 and print 5, 4, and 3.",
+      "template": "#include <stdio.h>\nint main() {\n    for (int step = 0; step < 3; step++) {\n        printf(\"%d\", 5 - ___);\n    }\n    return 0;\n}",
+      "hints": [
+        "The loop variable starts at 0 and increases by one.",
+        "Subtract the current step from 5."
+      ],
+      "expectedOutput": "5\n4\n3",
+      "requiredAnswers": ["step"]
+    },
+    {
+      "id": 310,
+      "language": "c",
+      "title": "Grid Signals",
+      "story": "A two-row grid sends three numbered signals from each row.",
+      "task": "Use nested loops to print 0, 1, 2, 10, 11, and 12.",
+      "template": "#include <stdio.h>\nint main() {\n    for (int row = 0; row < ___; row++) {\n        for (int col = 0; col < ___; col++) {\n            printf(\"%d\", row * 10 + col);\n        }\n    }\n    return 0;\n}",
+      "hints": [
+        "The outer loop controls two rows; the inner loop controls three columns.",
+        "Use limits 2 and 3. The row value is multiplied by 10."
+      ],
+      "expectedOutput": "0\n1\n2\n10\n11\n12",
+      "requiredAnswers": ["2", "3"]
+    }
+  ]
+}

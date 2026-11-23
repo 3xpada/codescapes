@@ -10,7 +10,7 @@ extension AppThemeOptionLabel on AppThemeOption {
   };
 
   String get description => switch (this) {
-    AppThemeOption.cyber => 'Cool cyan on a deep navy backdrop',
+    AppThemeOption.cyber => 'Soft teal accents on a muted slate backdrop',
     AppThemeOption.violet => 'A vivid purple night palette',
     AppThemeOption.daylight => 'A bright, easy-on-the-eyes palette',
   };
@@ -114,19 +114,19 @@ class AppPalette extends ThemeExtension<AppPalette> {
 class AppColors {
   static const cyber = AppPalette(
     brightness: Brightness.dark,
-    bgTop: Color(0xFF050810),
-    bgBottom: Color(0xFF0A1120),
-    card: Color(0xFF0D1424),
-    border: Color(0xFF1A2540),
-    inputBg: Color(0xFF080D1A),
-    text: Color(0xFFE2E8F0),
-    muted: Color(0xFF7C8BA8),
-    accent: Color(0xFF22D3EE),
-    secondary: Color(0xFF6366F1),
-    success: Color(0xFF34D399),
-    onAccent: Color(0xFF031417),
-    warning: Color(0xFFF59E0B),
-    danger: Color(0xFFF87171),
+    bgTop: Color(0xFF10171F),
+    bgBottom: Color(0xFF151E28),
+    card: Color(0xFF1A2530),
+    border: Color(0xFF32404B),
+    inputBg: Color(0xFF111922),
+    text: Color(0xFFE2E8EC),
+    muted: Color(0xFF9AA7B1),
+    accent: Color(0xFF83B9BB),
+    secondary: Color(0xFFA79CBF),
+    success: Color(0xFF8FB7A0),
+    onAccent: Color(0xFF122022),
+    warning: Color(0xFFD7B881),
+    danger: Color(0xFFD88E8E),
   );
 
   static const violet = AppPalette(
